@@ -5,7 +5,7 @@ namespace Assets.Scripts.Helpers
 {
     public static class LaserHelper
     {
-        private const int SCANNING_ANGLES = 12;
+        private const int SCANNING_ANGLES = 24;
 
         // scanning goes over angles relative to y as axis of rotation, so x = 1, z = 0 it is 90 grads.
         // a it is a starting angle

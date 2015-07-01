@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Assets.Scripts.Helpers;
@@ -9,79 +8,49 @@ namespace Assets.Scripts.Models
 {
     class ParticlesMap
     {
-        public float[,,] Probabilities;
-        private int length;
-        private int width;
+        public Particle[] Particles;
 
-        public ParticlesMap(int _length, int _width)
+        public ParticlesMap(List<Particle> ls)
         {
-            length = _length;
-            width = _width;
-            Probabilities = new float[length,width,4];
+            Particles = ls.ToArray();
         }
 
         public void Normalize()
         {
             var all = 0f;
-            for (var i = 0; i < length; i++)
+            foreach(var p in Particles)
             {
-                for (var j = 0; j < width; j++)
-                {
-                    for (var k = 0; k < 4; k++)
-                    {
-                        all += Probabilities[i, j, k];
-                    }
-                }
+                all += p.probablity;
             }
-            for (var i = 0; i < length; i++)
+            foreach (var p in Particles)
             {
-                for (var j = 0; j < width; j++)
-                {
-                    for (var k = 0; k < 4; k++)
-                    {
-                        Probabilities[i, j, k] /= all;
-                    }
-                }
+                p.probablity /= all;
             }
         }
 
-        public void Shift(MatrixPosition shift)
+        public void Shift(MoveModel move)
         {
-            var np = new float[length, width, 4];
-            for (var i = 0; i < length; i++)
+            foreach (var p in Particles)
             {
-                for (var j = 0; j < width; j++)
-                {
-                    var newI = i + shift.x;
-                    var newJ = j + shift.z;
-                    if (!(newI < 0 || newI >= length || newJ < 0 || newJ >= width))
-                    {
-                        for (int k = 0; k < 4; k++)
-                        {
-                            var newK = DiscreeteAngleOperations.Summ(k, shift.k);
-                            np[newI, newJ, newK] = Probabilities[i, j, k];
-                        }
-                    }
-                }
+                // move particle using moving probability model
+                var randomMove = Random.insideUnitCircle*move.dopusk;
+                var shift = new Vector3(move.shift.x + randomMove.x, 0f, move.shift.z + randomMove.y);
+                p.position += shift;
             }
-            Probabilities = np;
         }
 
-        internal void Threshold(float f)
+        internal void Resample(Particle bestParticle)
         {
-            for (var i = 0; i < length; i++)
+            var list = new List<Particle>();
+            foreach (var p in Particles)
             {
-                for (var j = 0; j < width; j++)
+                var probability = p.probablity/(bestParticle.probablity*1.2);
+                if (probability >= Random.Range(0f, 1f))
                 {
-                    for (var k = 0; k < 4; k++)
-                    {
-                        if (Probabilities[i, j, k] < f)
-                        {
-                            Probabilities[i, j, k] = 0f;
-                        }
-                    }
+                    list.Add(p);
                 }
             }
+            Particles = list;
         }
     }
 }

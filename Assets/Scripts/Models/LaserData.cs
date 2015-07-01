@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Text;
+using Assets.Scripts.Helpers;
 using UnityEngine;
 
 namespace Assets.Scripts.Models
@@ -21,18 +20,37 @@ namespace Assets.Scripts.Models
             return result;
         }
 
-        public LaserData RotateOn90()
+        public Particle Convolve(LaserData y)
         {
+            var bestProbability = 0f;
+            var bestDirection = 0;
+            foreach (var l in this)
+            {
+                var x2 = RotateOnAngle(l.Key);
+                var p = x2*y;
+                if (p > bestProbability)
+                {
+                    bestProbability = p;
+                    bestDirection = l.Key;
+                }
+            }
+            return new Particle {direction = bestDirection, probablity = bestProbability};
+        }
+
+        public LaserData RotateOnAngle(int angle)
+        {
+            angle = AngleHelper.NormalizeGrad(angle);
+
             var ld = new LaserData();
             foreach (var d in this)
             {
-                if (d.Key < 90)
+                if (d.Key < angle)
                 {
-                    ld[d.Key + 270] = d.Value;
+                    ld[d.Key + 360 - angle] = d.Value;
                 }
                 else
                 {
-                    ld[d.Key - 90] = d.Value;
+                    ld[d.Key - angle] = d.Value;
                 }
 
             }

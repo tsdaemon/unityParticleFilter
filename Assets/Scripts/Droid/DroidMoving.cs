@@ -1,90 +1,52 @@
-﻿using UnityEngine;
+﻿using Assets.Scripts.Models;
+using UnityEngine;
 
 public class DroidMoving : MonoBehaviour
 {
     public bool isMoving;
-    public float animationTime = 1.0f;
+    public float moveSpeed = 10f;
+    public float moveDopusk = 0.1f;
+    public float rotationSpeed = 10f;
+    private MoveModel moveAdd = new MoveModel();
 
-    private Vector3 to;
-    private float rotationFrom;
-    private float rotationTo;
+    // subsystems
+    private DroidMap map;
+    
 
-    private bool isRotating;
-    private bool isForward;
+    void Start()
+    {
+        map = GetComponent<DroidMap>();
+    }
 
     void Update()
     {
-        if (isForward)
+        var forward = Input.GetAxis("Vertical");
+        if (forward != 0f)
         {
-            if ((to - transform.position).sqrMagnitude > 0.01f)
+            // create random move
+            var shift = transform.forward*forward*moveSpeed*Time.deltaTime;
+            var dopusk = moveDopusk*Time.deltaTime;
+            var randomMove = Random.insideUnitCircle*dopusk;
+            var randomShift = new Vector3(shift.x + randomMove.x, 0f, shift.z + randomMove.y);
+            transform.position += randomShift;
+            // shift map using move model when move is big enough
+            moveAdd.shift += shift;
+            moveAdd.dopusk += dopusk;
+            if (moveAdd.shift.sqrMagnitude >= 0.25)
             {
-                var add = (to - from)*Time.deltaTime/animationTime;
-                transform.localPosition += add;
-            }
-            else 
-            {
-                isMoving = false;
-                isForward = false;
-                transform.position = to;
-            }
-        }
-        if (isRotating)
-        {
-            var rotationToAngles = rotationTo > 0 ? rotationTo : rotationTo + 360;
-            if (Mathf.Abs(rotationToAngles - transform.localRotation.eulerAngles.y) > 3f)
-            {
-                var yAdd = (rotationTo - rotationFrom)*Time.deltaTime/animationTime;
-                var euler = transform.rotation.eulerAngles;
-                euler.y += yAdd;
-                transform.rotation = Quaternion.Euler(euler);
-            }
-            else
-            {
-                isMoving = false;
-                isRotating = false;
-                var euler = transform.rotation.eulerAngles;
-                euler.y = rotationTo;
-                transform.rotation = Quaternion.Euler(euler);
+                map.ShiftPaticles(moveAdd);
+                moveAdd = new MoveModel();
             }
         }
-    }
-
-    public void MoveForward()
-    {
-        if (isMoving)
+        var horizontal = Input.GetAxis("Horizontal");
+        if (horizontal != 0f)
         {
-            return;
+            // rotate over y axis
+            var yRotation = horizontal*Time.deltaTime * rotationSpeed;
+            var euler = transform.rotation.eulerAngles;
+            euler.y += yRotation;
+            transform.rotation = Quaternion.Euler(euler);
         }
-        isMoving = true;
-
-        isForward = true;
-        from = transform.localPosition;
-        to = transform.forward + transform.localPosition;
     }
-
-    public void RotateCCW()
-    {
-        RotateOn(-90);
-    }
-
-    private void RotateOn(float angle)
-    {
-        if (isMoving)
-        {
-            return;
-        }
-        isMoving = true;
-
-        isRotating = true;
-        rotationFrom = transform.rotation.eulerAngles.y;
-        rotationTo = rotationFrom + angle;
-    }
-
-    public void RotateCW()
-    {
-        RotateOn(90);
-    }
-
-    public Vector3 from { get; set; }
 }
 

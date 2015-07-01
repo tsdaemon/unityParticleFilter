@@ -125,30 +125,6 @@ public class LabyrinthController : MonoBehaviour
     {
         return targetPosition;
     }
-    /// <summary>
-    /// Scan every labirynth point
-    /// </summary>
-    /// <returns></returns>
-    public LaserData[,,] GetScan()
-    {
-        var result = new LaserData[length, width, 4];
-        for (var i = 0; i < length; i++)
-        {
-            for (var j = 0; j < width; j++)
-            {
-                if (collisionMap[i, j] == 0)
-                {
-                    var data = LaserHelper.ScanPoint(new Vector3(i + 0.5f, 1f, j + 0.5f), 0);
-                    result[i, j, 0] = data;
-                    for (var k = 1; k < 4; k++)
-                    {
-                        result[i, j, k] = result[i, j, k - 1].RotateOn90();
-                    }
-                }
-            }
-        }
-        return result;
-    }
 
     internal int[,] GetMap()
     {

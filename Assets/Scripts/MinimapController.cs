@@ -2,78 +2,87 @@
 using System.Collections;
 using System.Collections.Generic;
 using Assets.Scripts.Models;
+using Particle = Assets.Scripts.Models.Particle;
+
 
 public class MinimapController : MonoBehaviour 
 {
     public GameObject particleObj;
-    public GameObject pathObj;
 
-    private IList<GameObject> particlesObjs = new List<GameObject>();
-    private Vector2[] directionParticlesShift =
+    private Dictionary<Particle, GameObject> particlesObjs = new Dictionary<Particle, GameObject>();
+    private List<Particle> particles;
+    void Update()
     {
-        new Vector2(0f, 0.3f), 
-        new Vector2(0.3f, 0f), 
-        new Vector2(0f, -0.3f),
-        new Vector2(-0.3f, 0)
-    };
-
-    public void ShowParticles(float[,,] particles, float best)
+        // if shift is not running and particles count is changed, delete old particle markers
+        if (particles.Count != particlesObjs.Count && !shiftIsRunning)
+        {
+            var dc = new Dictionary<Particle, GameObject>();
+            foreach (var p in particlesObjs.Keys)
+            {
+                if (particles.Contains(p))
+                {
+                    dc.Add(p, particlesObjs[p]);
+                }
+                else
+                {
+                    Destroy(particlesObjs[p]);
+                }
+            }
+            particlesObjs = dc;
+        }
+    }
+    public void ShowParticles(List<Particle> _particles, float best)
     {
+        particles = _particles;
         // remove old
         foreach (var particle in particlesObjs)
         {
-            Destroy(particle);
+            Destroy(particle.Value);
         }
         particlesObjs.Clear();
         // create new
-        for (var i = 0; i < particles.GetUpperBound(0) + 1; i++)
+        foreach (var p in particles)
         {
-            for (var j = 0; j < particles.GetUpperBound(1) + 1; j++)
+            if (p.probablity > 0)
             {
-                for (var k = 0; k < 4; k++)
-                {
-                    var probability = particles[i, j, k];
-                    if (probability > 0)
-                    {
-                        // set to position
-                        var o = Instantiate(particleObj);
-                        o.transform.parent = transform;
-                        var shift = directionParticlesShift[k];
-                        o.transform.position = new Vector3(i + 0.5f + shift.x, 0.5f, j + 0.5f + shift.y);
-                        // color is gradient dependent on probability from red for 0 to green for 1
-                        var ren = o.GetComponent<Renderer>();
-                        probability = probability/best;
-                        ren.material.color = new Color(1 - probability, probability, 0f);
-                        // add to the list
-                        particlesObjs.Add(o);
-                    }
-                }
+                // set to position
+                var o = Instantiate(particleObj);
+                o.transform.position = p.position;
+                // set rotation
+                var euler = transform.rotation.eulerAngles;
+                euler.y = p.direction;
+                o.transform.rotation = Quaternion.Euler(euler);
+                // color is gradient dependent on probability from red for 0 to green for 1
+                var ren = o.GetComponent<Renderer>();
+                var color = p.probablity / best;
+                ren.material.color = new Color(1 - color, color, 0f);
+                // add to the list
+                particlesObjs.Add(p,o);
             }
+                    
         }
     }
 
-    private IList<GameObject> pathObjs = new List<GameObject>();
-    internal void RenderPath(Path path)
+    private bool shiftIsRunning = true;
+    public IEnumerator Shift(List<Particle> _particles)
     {
-        foreach (var p in pathObjs)
+        var moved = 0;
+        particles = _particles;
+        shiftIsRunning = true;
+        foreach (var p in particles)
         {
-            Destroy(p);
+            if (particlesObjs.ContainsKey(p))
+            {
+                var o = particlesObjs[p];
+                o.transform.position = p.position;
+                moved++;
+                if (moved == 100)
+                {
+                    moved = 0;
+                    yield return null;
+                }
+            }
         }
-        pathObjs.Clear();
-        // clear previous path
-        foreach (var p in path.actions)
-        {
-            // set to position
-            var o = Instantiate(pathObj);
-            o.transform.parent = transform;
-            var shift = directionParticlesShift[p.To.position.k];
-            o.transform.position = new Vector3(p.To.position.x + 0.5f + shift.x, 0.8f, p.To.position.z + 0.5f + shift.y);
-            // color is gradient dependent on probability from red for 0 to green for 1
-            var ren = o.GetComponent<Renderer>();
-  
-            ren.material.color = Color.magenta;
-            // add to the list
-            pathObjs.Add(o);
-        }
+        shiftIsRunning = false;
     }
 }

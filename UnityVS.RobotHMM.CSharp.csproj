@@ -67,11 +67,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\DroidController.cs" />
     <Compile Include="Assets\Scripts\Droid\DroidLaser.cs" />
     <Compile Include="Assets\Scripts\Droid\DroidMap.cs" />
     <Compile Include="Assets\Scripts\Droid\DroidMoving.cs" />
     <Compile Include="Assets\Scripts\GameController.cs" />
+    <Compile Include="Assets\Scripts\Helpers\AngleHelper.cs" />
     <Compile Include="Assets\Scripts\Helpers\DiscreeteAngleOperations.cs" />
     <Compile Include="Assets\Scripts\Helpers\LaserHelper.cs" />
     <Compile Include="Assets\Scripts\Helpers\ParticlesHelper.cs" />
@@ -79,6 +79,8 @@
     <Compile Include="Assets\Scripts\MinimapController.cs" />
     <Compile Include="Assets\Scripts\Models\AStarGraph.cs" />
     <Compile Include="Assets\Scripts\Models\LaserData.cs" />
+    <Compile Include="Assets\Scripts\Models\MoveModel.cs" />
+    <Compile Include="Assets\Scripts\Models\Particle.cs" />
     <Compile Include="Assets\Scripts\Models\ParticleMap.cs" />
     <Compile Include="Assets\Scripts\Models\MatrixPosition.cs" />
   </ItemGroup>

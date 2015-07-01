@@ -5,8 +5,6 @@ public class GameController : MonoBehaviour {
     public LabyrinthController labyrinth;
     public GameObject droidPrefab;
 
-    private bool isRaycasting = false;
-    private float rayAngle = 0f;
     private GameObject droid;
 
 	void Start () 
