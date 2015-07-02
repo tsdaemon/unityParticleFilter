@@ -6,7 +6,7 @@ using Particle = Assets.Scripts.Models.Particle;
 
 public class DroidMap : MonoBehaviour
 {
-    private GameObject labyrinth;
+    private LabyrinthController labyrinth;
     private MinimapController minimap;
     private int[,] walls;
     private ParticlesMap particlesMap;
@@ -16,18 +16,17 @@ public class DroidMap : MonoBehaviour
     void Awake()
     {
         // connect to the outer data
-        labyrinth = GameObject.FindGameObjectWithTag("Labyrinth");
-        var c = labyrinth.GetComponent<LabyrinthController>();
-        walls = c.GetMap();
-
+        labyrinth = GameObject.FindGameObjectWithTag("Labyrinth").GetComponent<LabyrinthController>();
+        walls = labyrinth.GetMap();
         minimap = GameObject.FindGameObjectWithTag("Minimap").GetComponent<MinimapController>();
+
         // connect to subsystems
         laser = GetComponent<DroidLaser>();
         
         // create first particles, for 3*3 for each unit
-        var length = walls.GetUpperBound(0) + 1;
-        var width = walls.GetUpperBound(1) + 1;
-        var particlesOnUnit = 3;
+        var length = labyrinth.length;
+        var width = labyrinth.width;
+        var particlesOnUnit = 1;
         var particlesShift = CreateParticlesShift(particlesOnUnit);
         var ls = new List<Particle>();
         for (var i = 0; i < length; i++)
@@ -49,10 +48,11 @@ public class DroidMap : MonoBehaviour
                 }
             }
         }
+
         // create particles map
         particlesMap = new ParticlesMap(ls);
         particlesMap.Normalize();
-        minimap.ShowParticles(particlesMap.Particles, 1f);
+        StartCoroutine(minimap.ShowParticles(particlesMap.Particles));
     }
 
     private Vector3[] CreateParticlesShift(int particlesOnUnit)
@@ -71,55 +71,76 @@ public class DroidMap : MonoBehaviour
         return vectorValues;
     }
 
-    void Update()
+    // on move 
+    public void OnMove(MoveModel model)
     {
-        if (Input.GetButton("Scan") && !laser.isScanning)
-        {
-            var scan = laser.Scan();
-            //Debug.Log(lastScan.ToString());
-            RecreateParticles(scan);
-        }
+        //float time = Time.realtimeSinceStartup;
+        // on move shift all particles in move direction
+        ShiftParticles(model.shift);
+        //time = Time.realtimeSinceStartup - time;
+        //Debug.Log("ShiftParticles execution time: " + time);
+        //time = Time.realtimeSinceStartup;
+        // next weight all particles according to new scan data
+        WeightParticles();
+        //time = Time.realtimeSinceStartup - time;
+        //Debug.Log("WeightParticles execution time: " + time);
+        //time = Time.realtimeSinceStartup;
+        // next recreate particles with a probabilities
+        Resample(model.tolerance);
+        //time = Time.realtimeSinceStartup - time;
+        //Debug.Log("Resample execution time: " + time);
+        // in the end start particles rerender
+        StartCoroutine(minimap.ShowParticles(particlesMap.Particles));
     }
 
-    // on this step every particle creates again with probability of it weight
-    public void RecreateParticles(LaserData data)
+    private void Resample(float tolerance)
     {
-        var bestParticle = new Particle();
-        // reweight particles
+        particlesMap.Resample(tolerance);
+        particlesMap.Normalize();
+    }
+
+    private void WeightParticles()
+    {
+        var data = laser.Scan();
+        var pBest = new Particle();
         foreach (var p in particlesMap.Particles)
         {
-            var convolution = LaserHelper.ScanPoint(p.position, 0).Convolve(data);
-            p.direction = convolution.direction;
-            p.probablity = convolution.probablity;
-            if (bestParticle.probablity < p.probablity)
+            var convolution = LaserHelper.ScanPoint(p.position)*data;
+            //p.direction = (int)convolution.topPosition;
+
+            p.probablity = CalculateProbabilityOnProductResult(convolution);
+            if (p.probablity > pBest.probablity)
             {
-                bestParticle = p;
+                pBest = p;
             }
         }
-        particlesMap.Normalize();
-        // next recreate particles with a probabilities
-        particlesMap.Resample(bestParticle);
-        // update minimap
-        minimap.ShowParticles(particlesMap.Particles, bestParticle.probablity*2);
     }
 
-    public void ShiftPaticles(MoveModel model)
+    private float CalculateProbabilityOnProductResult(float r)
     {
-        // shift particles
-        particlesMap.Shift(model);
+        var p = 0f;
+        var threshold = 0.4f;
+        if (r > threshold)
+        {
+            p = 1.028f * Mathf.Pow(r, 3) - 0.028f;
+        }
+        return p;
+    }
+
+    private void ShiftParticles(Vector3 shift)
+    {
+        particlesMap.Shift(shift);
         // set zero probability for particles, which shifts in a wall
         foreach (var p in particlesMap.Particles)
         {
             var x = Mathf.FloorToInt(p.position.x);
             var z = Mathf.FloorToInt(p.position.z);
-
-            if (walls[x, z] == 1)
+            
+            if (x < 0 || x >= labyrinth.length || z < 0 || z >= labyrinth.width || walls[x, z] == 1)
             {
                 p.probablity = 0;
             }
         }
-        // shift gameobjects
-        StartCoroutine(minimap.ShowParticles(particlesMap.Particles));
     }
 }
 

@@ -28,29 +28,45 @@ namespace Assets.Scripts.Models
             }
         }
 
-        public void Shift(MoveModel move)
+        public void Shift(Vector3 shift)
         {
             foreach (var p in Particles)
             {
-                // move particle using moving probability model
-                var randomMove = Random.insideUnitCircle*move.dopusk;
-                var shift = new Vector3(move.shift.x + randomMove.x, 0f, move.shift.z + randomMove.y);
                 p.position += shift;
             }
         }
 
-        internal void Resample(Particle bestParticle)
+        internal void Resample(float randomRadius)
         {
             var list = new List<Particle>();
-            foreach (var p in Particles)
+            var i = 0;
+            while (i < Particles.Length)
             {
-                var probability = p.probablity/(bestParticle.probablity*1.2);
-                if (probability >= Random.Range(0f, 1f))
+                foreach (var p in Particles)
                 {
-                    list.Add(p);
+                    if (p.probablity > 0f && Random.Range(0f, 1f) <= p.probablity)
+                    {
+                        var randomShift = randomRadius*Random.insideUnitCircle;
+                        var newPosition = p.position + new Vector3(randomShift.x, 0f, randomShift.y);
+                        var particle = new Particle {probablity = 1, direction = p.direction, position = newPosition};
+                        list.Add(particle);
+                        i++;
+                        if (i == Particles.Length) break;
+                    }
                 }
             }
-            Particles = list;
+            Particles = list.ToArray();
+        }
+
+        public void Threshold(float t)
+        {
+            foreach (var p in Particles)
+            {
+                if (p.probablity < t)
+                {
+                    p.probablity = 0f;
+                }
+            }
         }
     }
 }

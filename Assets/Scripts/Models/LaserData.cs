@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text;
+using System.Xml.Xsl;
 using Assets.Scripts.Helpers;
 using UnityEngine;
 
@@ -20,7 +21,7 @@ namespace Assets.Scripts.Models
             return result;
         }
 
-        public Particle Convolve(LaserData y)
+        public ConvolutionResult Convolve(LaserData y)
         {
             var bestProbability = 0f;
             var bestDirection = 0;
@@ -34,7 +35,7 @@ namespace Assets.Scripts.Models
                     bestDirection = l.Key;
                 }
             }
-            return new Particle {direction = bestDirection, probablity = bestProbability};
+            return new ConvolutionResult { topPosition = bestDirection, top = bestProbability };
         }
 
         public LaserData RotateOnAngle(int angle)

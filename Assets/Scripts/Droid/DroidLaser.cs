@@ -32,12 +32,16 @@ public class DroidLaser : MonoBehaviour
     private Quaternion rotation;
     public LaserData Scan()
     {
-        laser.SetActive(true);
-        isScanning = true;
-        rotation = laser.transform.rotation;
+        if (!isScanning)
+        {
+            laser.SetActive(true);
+            isScanning = true;
+            rotation = laser.transform.rotation;
+            laser.transform.rotation = Quaternion.Euler(new Vector3(0, 90, 0));
+        }
 
         var point = new Vector3(laser.transform.position.x, 1f, laser.transform.position.z);
-        return LaserHelper.ScanPoint(point, (int)transform.rotation.eulerAngles.y);
+        return LaserHelper.ScanPoint(point); //(int)transform.rotation.eulerAngles.y
     }
 
     public void StopScan()

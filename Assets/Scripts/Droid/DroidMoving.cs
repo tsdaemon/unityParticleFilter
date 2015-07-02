@@ -5,7 +5,7 @@ public class DroidMoving : MonoBehaviour
 {
     public bool isMoving;
     public float moveSpeed = 10f;
-    public float moveDopusk = 0.1f;
+    public float moveTolerance = 0.1f;
     public float rotationSpeed = 10f;
     private MoveModel moveAdd = new MoveModel();
 
@@ -24,18 +24,19 @@ public class DroidMoving : MonoBehaviour
         if (forward != 0f)
         {
             // create random move
-            var shift = transform.forward*forward*moveSpeed*Time.deltaTime;
-            var dopusk = moveDopusk*Time.deltaTime;
-            var randomMove = Random.insideUnitCircle*dopusk;
-            var randomShift = new Vector3(shift.x + randomMove.x, 0f, shift.z + randomMove.y);
-            transform.position += randomShift;
+            var randomShift = Random.insideUnitCircle * moveTolerance * Time.deltaTime;
+            var shift = transform.forward*forward*moveSpeed*Time.deltaTime +
+                        new Vector3(randomShift.x, 0f, randomShift.y);
+            transform.position += shift;
+
             // shift map using move model when move is big enough
-            moveAdd.shift += shift;
-            moveAdd.dopusk += dopusk;
+            moveAdd.shift += transform.forward * forward * moveSpeed * Time.deltaTime;
+            moveAdd.tolerance += moveTolerance * Time.deltaTime;
             if (moveAdd.shift.sqrMagnitude >= 0.25)
             {
-                map.ShiftPaticles(moveAdd);
+                map.OnMove(moveAdd);
                 moveAdd = new MoveModel();
+                GetComponent<DroidSound>().PlayRandom();
             }
         }
         var horizontal = Input.GetAxis("Horizontal");

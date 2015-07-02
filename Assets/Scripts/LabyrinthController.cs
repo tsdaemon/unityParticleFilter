@@ -13,7 +13,9 @@ public class LabyrinthController : MonoBehaviour
     public float complexity;
 
     private int[,] collisionMap;
-    private MatrixPosition targetPosition;
+    private Vector3 targetPosition;
+    private int xtarget;
+    private int ztarget;
 
     void Awake ()
     {
@@ -30,14 +32,13 @@ public class LabyrinthController : MonoBehaviour
     private void CreateTarget()
     {
         // create target position
-        var xtarget = Random.Range(1, length - 2);
-        var ztarget = Random.Range(1, width - 2);
+        xtarget = Random.Range(2, length - 2);
+        ztarget = Random.Range(2, width - 2);
 
-        var position = new Vector3(xtarget + 1f, 0, ztarget + 1f);
-        targetPosition = new MatrixPosition{x = xtarget, z = ztarget};
+        targetPosition = new Vector3(xtarget, 0, ztarget);
         var o = Instantiate(targetGameObject);
         o.transform.parent = transform;
-        o.transform.position = position;
+        o.transform.position = targetPosition;
     }
     private void CreateCollisions(float y)
     {
@@ -47,7 +48,7 @@ public class LabyrinthController : MonoBehaviour
             for (var j = 1; j < width - 1; j++)
             {
                 // check it is not target position
-                if (i == targetPosition.x && j == targetPosition.z)
+                if (i == xtarget && j == ztarget)
                 {
                     continue;
                 }
@@ -121,7 +122,7 @@ public class LabyrinthController : MonoBehaviour
         } while (collisionMap[x, z] == 1 || (targetPosition.x == x && targetPosition.z == z));
         return new MatrixPosition{x = x, z = z};
     }
-    public MatrixPosition GetTargetPosition()
+    public Vector3 GetTargetPosition()
     {
         return targetPosition;
     }
