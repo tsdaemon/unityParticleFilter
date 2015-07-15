@@ -36,13 +36,13 @@ public class SceneFadeInOut : MonoBehaviour
         }
     }
 
-    public void EndScene() {
+    public void EndScene(int level) {
         texture.enabled = true;
 
         FadeToBlack();
 
         if(texture.color.a >= 0.95f) {
-            Application.LoadLevel(0);
+            Application.LoadLevel(level);
         }
     }
 }
